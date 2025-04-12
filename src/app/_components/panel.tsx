@@ -184,13 +184,7 @@ export function DaoPanel({ className }: DaoPanelProps) {
     >
       <header className="flex flex-col gap-[20px]">
         <div className="flex w-full items-center justify-end">
-          <Image
-            src="/images/common/logo.svg"
-            alt="XAccount Logo"
-            width={114.773}
-            height={22}
-            className=""
-          />
+          <Image src="/images/common/logo.svg" alt="XAccount Logo" width={82} height={9} />
         </div>
         <div className="flex flex-col">
           <h1 className="text-[24px] font-semibold leading-[120%] text-[#F6F1E8]">DAO TOOL</h1>
