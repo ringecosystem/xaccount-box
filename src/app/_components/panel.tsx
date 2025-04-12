@@ -5,21 +5,45 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Tabs } from './tabs';
 import { Select } from '@/components/select';
-import { getChains } from '@/utils';
+import { getChains, getChainById, getDefaultChainId } from '@/utils';
 import { CreateXAccount } from './create-xaccount';
 import { GenerateAction } from './generate-action';
 import { AddressInput } from '@/components/address-input';
 import { WalletGuard } from './wallet-guard';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 import { isAddress } from 'viem';
 import { motion } from 'framer-motion';
+import { useMultiSourceState } from '@/hooks/useMultiSourceState';
 
 interface DaoPanelProps {
   className?: string;
 }
 
 const chains = getChains();
+
+const getFromChainIdFromUrl = (fromChainIdByUrl: string | null): string | undefined => {
+  if (!fromChainIdByUrl) {
+    return undefined;
+  }
+  const chain = getChainById(Number(fromChainIdByUrl));
+  if (chain) {
+    return chain?.id?.toString();
+  }
+  return undefined;
+};
+
+const getCompatibleChainId = (sourceChainId: string): string => {
+  const sourceChain = getChainById(Number(sourceChainId));
+  if (!sourceChain) {
+    return '';
+  }
+  const compatibleChains = chains.filter(
+    (chain) =>
+      chain.testnet === sourceChain.testnet && chain.id.toString() !== sourceChainId?.toString()
+  );
+
+  return compatibleChains.length > 0 ? compatibleChains[0].id.toString() : '';
+};
 
 const chainOptions = chains.map((chain) => ({
   value: chain.id.toString(),
@@ -31,45 +55,47 @@ function DaoPanelContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<'create' | 'generate'>(
-    () => (searchParams.get('tab') as 'create' | 'generate') || 'create'
-  );
+  const timeLockContractAddressFromUrl = searchParams.get('timeLockContractAddress');
+  const fromChainIdFromUrl = searchParams.get('sourceChainId');
+  const tabFromUrl = searchParams.get('tab') as 'create' | 'generate';
 
-  const [timeLockContractAddress, setTimeLockContractAddress] = useLocalStorageState<
+  const [activeTab, setActiveTab] = useState<typeof tabFromUrl>(tabFromUrl || 'create');
+
+  const [timeLockContractAddress, setTimeLockContractAddress] = useMultiSourceState<
     `0x${string}` | ''
-  >('timeLockContractAddress', '');
+  >({
+    key: 'timeLockContractAddress',
+    urlParam:
+      timeLockContractAddressFromUrl && isAddress(timeLockContractAddressFromUrl)
+        ? timeLockContractAddressFromUrl
+        : undefined,
+    defaultValue: ''
+  });
 
-  const [sourceChainId, setSourceChainId] = useLocalStorageState(
-    'sourceChainId',
-    chains[0].id.toString()
-  );
-  const [targetChainId, setTargetChainId] = useLocalStorageState(
-    'targetChainId',
-    chains[1].id.toString()
-  );
+  const [sourceChainId, setSourceChainId] = useMultiSourceState({
+    key: 'sourceChainId',
+    urlParam: getFromChainIdFromUrl(fromChainIdFromUrl),
+    defaultValue: getDefaultChainId()?.toString() || ''
+  });
+
+  const [targetChainId, setTargetChainId] = useState(getCompatibleChainId(sourceChainId));
 
   const timeLockContractAddressValid = useMemo(() => {
     return !!timeLockContractAddress && isAddress(timeLockContractAddress);
   }, [timeLockContractAddress]);
 
+  const handleTimeLockContractAddressChange = (value: string) => {
+    setTimeLockContractAddress(value as `0x${string}`);
+  };
+
   const handleSourceChainChange = (value: string) => {
     setSourceChainId(value);
-    if (value === targetChainId) {
-      const availableChain = chains.find((chain) => chain.id.toString() !== value);
-      if (availableChain) {
-        setTargetChainId(availableChain.id.toString());
-      }
-    }
+    setTargetChainId(getCompatibleChainId(value));
   };
 
   const handleTargetChainChange = (value: string) => {
     setTargetChainId(value);
-    if (value === sourceChainId) {
-      const availableChain = chains.find((chain) => chain.id.toString() !== value);
-      if (availableChain) {
-        setSourceChainId(availableChain.id.toString());
-      }
-    }
+    setSourceChainId(getCompatibleChainId(value));
   };
 
   const handleTabChange = (tab: 'create' | 'generate') => {
@@ -88,7 +114,7 @@ function DaoPanelContent() {
           </label>
           <AddressInput
             value={timeLockContractAddress}
-            onChange={setTimeLockContractAddress}
+            onChange={handleTimeLockContractAddressChange}
             placeholder="Input contract address"
           />
         </div>
@@ -100,7 +126,7 @@ function DaoPanelContent() {
           <Select
             placeholder="Select Chain"
             options={chainOptions}
-            value={sourceChainId}
+            value={sourceChainId?.toString() || ''}
             onValueChange={handleSourceChainChange}
           />
         </div>
@@ -112,7 +138,7 @@ function DaoPanelContent() {
           <Select
             placeholder="Select Chain"
             options={chainOptions}
-            value={targetChainId}
+            value={targetChainId?.toString() || ''}
             onValueChange={handleTargetChainChange}
           />
         </div>

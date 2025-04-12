@@ -7,7 +7,7 @@ import ConnectTabs from './connect-tabs';
 import { ConnectURI } from './connect-uri';
 import { ConnectIframe } from './connect-iframe';
 import { useGetDeployed } from '@/hooks/useGetDeployed';
-import { ContentSkeleton } from '@/components/content-skeletion';
+import { ContentSkeleton } from '@/components/content-skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';

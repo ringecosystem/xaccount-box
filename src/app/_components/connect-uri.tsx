@@ -292,6 +292,7 @@ export const ConnectURI = ({
         isLoading={isLoading}
         sourcePort={sourcePort}
         transaction={walletConnectTransaction}
+        sourceChainId={Number(sourceChainId)}
         targetChainId={Number(targetChainId)}
         moduleAddress={moduleAddress}
         message={actionState?.message}

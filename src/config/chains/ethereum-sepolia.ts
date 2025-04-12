@@ -1,16 +1,9 @@
 import { sepolia } from 'wagmi/chains';
 
-import { ChainId, type ChainConfig } from '@/types/chains';
-
-import { getRpcUrl } from '../rpc-url';
+import { type ChainConfig } from '@/types/chains';
 
 export const ethereumSepolia: ChainConfig = {
   ...sepolia,
-  rpcUrls: {
-    default: {
-      http: [getRpcUrl(ChainId.ETHEREUM_SEPOLIA)]
-    }
-  },
-  iconUrl: '/images/chains/ethereum.svg',
+  iconUrl: '/images/chains/ethereumSepolia.svg',
   shortName: 'sep'
 } as const satisfies ChainConfig;

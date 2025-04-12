@@ -203,6 +203,7 @@ export const ConnectIframe = ({
               }
             : undefined
         }
+        sourceChainId={Number(sourceChainId)}
         targetChainId={Number(targetChainId)}
         moduleAddress={moduleAddress}
         message={actionState?.message}

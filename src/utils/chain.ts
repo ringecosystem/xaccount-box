@@ -1,9 +1,12 @@
-import { ethereumSepolia, arbitrumSepolia } from '@/config/chains';
+import { ethereumSepolia, arbitrumSepolia, darwinia, ethereum, arbitrum } from '@/config/chains';
 import { ChainConfig, ChainId } from '@/types/chains';
 
 import type { Chain } from '@rainbow-me/rainbowkit';
 
 const chainConfigMap: Record<number, Chain> = {
+  [ChainId.ETHEREUM]: ethereum,
+  [ChainId.ARBITRUM]: arbitrum,
+  [ChainId.DARWINIA]: darwinia,
   [ChainId.ETHEREUM_SEPOLIA]: ethereumSepolia,
   [ChainId.ARBITRUM_SEPOLIA]: arbitrumSepolia
 };
@@ -31,7 +34,7 @@ export function getDefaultChain(): Chain {
     );
   }
 
-  const defaultChainId = ChainId.ETHEREUM_SEPOLIA;
+  const defaultChainId = ChainId.ETHEREUM;
   const defaultChain = chains.find((chain) => chain.id === defaultChainId);
 
   return defaultChain || chains[0];
