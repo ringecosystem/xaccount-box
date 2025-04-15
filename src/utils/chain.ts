@@ -3,17 +3,10 @@ import { ChainConfig, ChainId } from '@/types/chains';
 
 import type { Chain } from '@rainbow-me/rainbowkit';
 
-const chainConfigMap: Record<number, Chain> = {
-  [ChainId.ETHEREUM]: ethereum,
-  [ChainId.ARBITRUM]: arbitrum,
-  [ChainId.DARWINIA]: darwinia,
-  [ChainId.ETHEREUM_SEPOLIA]: ethereumSepolia,
-  [ChainId.ARBITRUM_SEPOLIA]: arbitrumSepolia
-};
+const chains: Chain[] = [ethereum, arbitrum, darwinia, ethereumSepolia, arbitrumSepolia];
 
 // Returns an array of all chain configurations, filtering based on deployment mode
 export function getChains(): [ChainConfig, ...ChainConfig[]] {
-  const chains: Chain[] = Object.values(chainConfigMap);
   if (chains.length === 0) {
     throw new Error('No suitable chain configurations are available.');
   }
@@ -22,12 +15,11 @@ export function getChains(): [ChainConfig, ...ChainConfig[]] {
 
 // Returns the chain by its id
 export function getChainById(id?: ChainId): Chain | undefined {
-  return id ? chainConfigMap[id] : undefined;
+  return id ? chains.find((chain) => chain.id === id) : undefined;
 }
 
 // Returns the default chain configuration based on deployment mode
 export function getDefaultChain(): Chain {
-  const chains = Object.values(chainConfigMap);
   if (chains.length === 0) {
     throw new Error(
       'No suitable chain configurations are available for the current deployment mode.'
