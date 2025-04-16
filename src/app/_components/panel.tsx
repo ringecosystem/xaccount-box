@@ -32,7 +32,7 @@ const getFromChainIdFromUrl = (fromChainIdByUrl: string | null): string | undefi
   return undefined;
 };
 
-const getCompatibleChainId = (sourceChainId: string): string => {
+const getCompatibleChainId = (sourceChainId: string, defaultChainId?: string): string => {
   const sourceChain = getChainById(Number(sourceChainId));
   if (!sourceChain) {
     return '';
@@ -42,7 +42,16 @@ const getCompatibleChainId = (sourceChainId: string): string => {
       chain.testnet === sourceChain.testnet && chain.id.toString() !== sourceChainId?.toString()
   );
 
-  return compatibleChains.length > 0 ? compatibleChains[0].id.toString() : '';
+  if (compatibleChains.length) {
+    if (
+      defaultChainId &&
+      compatibleChains.find((chain) => chain.id.toString() === defaultChainId)
+    ) {
+      return defaultChainId;
+    }
+    return compatibleChains[0].id.toString();
+  }
+  return '';
 };
 
 const chainOptions = chains.map((chain) => ({
@@ -80,6 +89,24 @@ function DaoPanelContent() {
 
   const [targetChainId, setTargetChainId] = useState(getCompatibleChainId(sourceChainId));
 
+  const targetChainOptions = useMemo(() => {
+    const sourceChain = getChainById(Number(sourceChainId));
+    if (!sourceChain) {
+      return chainOptions;
+    }
+
+    return chains
+      .filter(
+        (chain) =>
+          chain.testnet === sourceChain.testnet && chain.id.toString() !== sourceChainId?.toString()
+      )
+      .map((chain) => ({
+        value: chain.id.toString(),
+        label: chain.name,
+        asset: chain.iconUrl as string
+      }));
+  }, [sourceChainId, chainOptions]);
+
   const timeLockContractAddressValid = useMemo(() => {
     return !!timeLockContractAddress && isAddress(timeLockContractAddress);
   }, [timeLockContractAddress]);
@@ -90,12 +117,12 @@ function DaoPanelContent() {
 
   const handleSourceChainChange = (value: string) => {
     setSourceChainId(value);
-    setTargetChainId(getCompatibleChainId(value));
+    setTargetChainId(getCompatibleChainId(value, targetChainId));
   };
 
   const handleTargetChainChange = (value: string) => {
     setTargetChainId(value);
-    setSourceChainId(getCompatibleChainId(value));
+    setSourceChainId(getCompatibleChainId(value, sourceChainId));
   };
 
   const handleTabChange = (tab: 'create' | 'generate') => {
@@ -137,7 +164,7 @@ function DaoPanelContent() {
           </label>
           <Select
             placeholder="Select Chain"
-            options={chainOptions}
+            options={targetChainOptions}
             value={targetChainId?.toString() || ''}
             onValueChange={handleTargetChainChange}
           />
