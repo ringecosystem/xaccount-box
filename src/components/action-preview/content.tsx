@@ -1,7 +1,9 @@
 import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import ClipboardIconButton from '@/components/clipboard-icon-button';
-
+import { Button } from '@/components/ui/button';
+import { useCallback, useMemo } from 'react';
+import { generateHash } from '@/utils';
 SyntaxHighlighter.registerLanguage('json', json);
 
 export interface Transaction {
@@ -64,6 +66,7 @@ const customStyle = {
 export const Content = ({
   transaction,
   sourcePort,
+  sourceChainId,
   targetChainId,
   moduleAddress,
   message,
@@ -72,30 +75,84 @@ export const Content = ({
 }: {
   transaction?: Transaction;
   sourcePort?: string;
+  sourceChainId?: number;
   targetChainId?: number;
   moduleAddress?: string;
   message?: string;
   params?: string;
   fee?: string;
 }) => {
-  const generatedAction: GeneratedAction | object =
-    transaction && sourcePort && fee && moduleAddress && targetChainId && message && params
-      ? {
-          transaction: transaction,
-          crossChainCall: {
-            port: sourcePort,
-            value: fee,
-            function:
-              'send(uint256 toChainId, address toDapp, bytes calldata message, bytes calldata params) external payable',
-            params: {
-              toChainId: targetChainId.toString(),
-              toDapp: moduleAddress,
-              message: message,
-              params: params
-            }
-          }
+  // const generatedAction: GeneratedAction | object =
+  //   transaction && sourcePort && fee && moduleAddress && targetChainId && message && params
+  //     ? {
+  //         transaction: transaction,
+  //         crossChainCall: {
+  //           port: sourcePort,
+  //           value: fee,
+  //           function:
+  //             'send(uint256 toChainId, address toDapp, bytes calldata message, bytes calldata params) external payable',
+  //           params: {
+  //             toChainId: targetChainId.toString(),
+  //             toDapp: moduleAddress,
+  //             message: message,
+  //             params: params
+  //           }
+  //         }
+  //       }
+  //     : {};
+
+  const generatedAction = useMemo<GeneratedAction | object>(() => {
+    if (transaction && sourcePort && fee && moduleAddress && targetChainId && message && params) {
+      const crossChainCall = {
+        port: sourcePort,
+        value: fee,
+        function:
+          'send(uint256 toChainId, address toDapp, bytes calldata message, bytes calldata params) external payable',
+        params: {
+          toChainId: targetChainId.toString(),
+          toDapp: moduleAddress,
+          message: message,
+          params: params
         }
-      : {};
+      };
+      const crossChainCallHash = generateHash(crossChainCall);
+      return {
+        sourceChainId,
+        targetChainId,
+        crossChainCallHash,
+        transaction,
+        crossChainCall
+      };
+    }
+    return {};
+  }, [transaction, sourcePort, fee, moduleAddress, sourceChainId, targetChainId, message, params]);
+
+  const dataExists = generatedAction && Object.keys(generatedAction).length > 0;
+
+  // Handle the export action
+  const handleExportAction = useCallback(() => {
+    const hash =
+      generatedAction && 'crossChainCallHash' in generatedAction
+        ? (generatedAction.crossChainCallHash as string)
+        : '';
+
+    const shortHash = hash?.replace('0x', '')?.slice(0, 8);
+    const fileName = `${sourceChainId}-${targetChainId}-call-${shortHash}.json`;
+
+    // Create a blob with the JSON data
+    const jsonContent = JSON.stringify(generatedAction, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+
+    // Create download link and trigger the download
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+
+    // Clean up
+    URL.revokeObjectURL(url);
+  }, [generatedAction, sourceChainId, targetChainId]);
 
   return (
     <div className="flex w-full flex-col gap-[12px] rounded-[8px] bg-[#1A1A1A] p-[22px]">
@@ -103,7 +160,7 @@ export const Content = ({
         <span className="text-sm font-semibold leading-[150%] text-[#F6F1E8]/70">
           Generated Action
         </span>
-        {generatedAction && Object.keys(generatedAction).length > 0 && (
+        {dataExists && (
           <ClipboardIconButton text={JSON.stringify(generatedAction, null, 2)} size={18} />
         )}
       </header>
@@ -118,6 +175,17 @@ export const Content = ({
           {JSON.stringify(generatedAction, null, 2)}
         </SyntaxHighlighter>
       </div>
+      {dataExists && (
+        <div className="flex justify-center">
+          <Button
+            variant="secondary"
+            onClick={handleExportAction}
+            className="h-[31px] w-full max-w-[104px] rounded-[8px] bg-[#7838FF] text-sm font-medium leading-[150%] text-[#F6F1E8] hover:bg-[#7838FF]/80"
+          >
+            Export Action
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

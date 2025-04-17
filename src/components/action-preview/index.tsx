@@ -5,6 +5,7 @@ interface ActionPreviewProps {
   isLoading?: boolean;
   transaction?: Transaction;
   sourcePort?: string;
+  sourceChainId?: number;
   targetChainId?: number;
   moduleAddress?: string;
   message?: string;
@@ -16,6 +17,7 @@ export function ActionPreview({
   isLoading,
   transaction,
   sourcePort,
+  sourceChainId,
   targetChainId,
   moduleAddress,
   message,
@@ -58,6 +60,7 @@ export function ActionPreview({
           <Content
             transaction={transaction!}
             sourcePort={sourcePort!}
+            sourceChainId={sourceChainId!}
             targetChainId={targetChainId!}
             moduleAddress={moduleAddress!}
             message={message!}

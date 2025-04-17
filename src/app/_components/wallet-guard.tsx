@@ -1,4 +1,4 @@
-import { ContentSkeleton } from '@/components/content-skeletion';
+import { ContentSkeleton } from '@/components/content-skeleton';
 import { Button } from '@/components/ui/button';
 import { getChainById } from '@/utils';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
