@@ -133,9 +133,11 @@ export const Content = ({
   const handleExportAction = useCallback(() => {
     const hash =
       generatedAction && 'crossChainCallHash' in generatedAction
-        ? generatedAction.crossChainCallHash
+        ? (generatedAction.crossChainCallHash as string)
         : '';
-    const fileName = `${sourceChainId}-${targetChainId}-call-${hash}.json`;
+
+    const shortHash = hash?.replace('0x', '')?.slice(0, 8);
+    const fileName = `${sourceChainId}-${targetChainId}-call-${shortHash}.json`;
 
     // Create a blob with the JSON data
     const jsonContent = JSON.stringify(generatedAction, null, 2);
