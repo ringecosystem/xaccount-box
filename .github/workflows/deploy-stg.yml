@@ -15,7 +15,18 @@ jobs:
         with:
           version: 8
 
+      - name: Configure Vercel Node.js runtime
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            -X PATCH "https://api.vercel.com/v9/projects/xaccount-ui?teamId=itering" \
+            -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"nodeVersion":"26.x"}'
+
       - uses: darwinia-network/devops/actions/smart-vercel@main
+        id: deploy_vercel
         name: Deploy to Vercel
         with:
           node_version: 22
@@ -28,6 +39,19 @@ jobs:
           project_name: xaccount-ui
           alias_domain: "xaccount-stg"
           enable_cache: true
-          enable_notify_slack: true
+          enable_notify_slack: false
           slack_channel: public-ringdao-apps
           slack_webhook: ${{ secrets.SLACK_INCOMING_WEBHOOK_URL }}
+
+      - name: Slack Notification
+        if: ${{ success() }}
+        continue-on-error: true
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: public-ringdao-apps
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_ICON: https://avatars.githubusercontent.com/u/14985020?s=48&v=4
+          SLACK_MESSAGE: ${{ steps.deploy_vercel.outputs.PREVIEW_LINK }}
+          SLACK_TITLE: Preview
+          SLACK_USERNAME: Vercel
+          SLACK_WEBHOOK: ${{ secrets.SLACK_INCOMING_WEBHOOK_URL }}
