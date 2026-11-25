@@ -16,16 +16,6 @@ jobs:
         with:
           version: 8
 
-      - name: Configure Vercel Node.js runtime
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          curl --fail-with-body --silent --show-error \
-            -X PATCH "https://api.vercel.com/v9/projects/xaccount-ui?teamId=itering" \
-            -H "Authorization: Bearer ${VERCEL_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data '{"nodeVersion":"26.x"}'
-
       - uses: darwinia-network/devops/actions/smart-vercel@main
         id: deploy_vercel
         name: Deploy to Vercel
@@ -33,16 +23,15 @@ jobs:
           node_version: 22
           vercel_token: ${{ secrets.VERCEL_TOKEN }}
           vercel_group: itering
-          script_install: pnpm install
-          script_build: pnpm build
+          script_install: pnpm install --frozen-lockfile
+          script_build: |
+            pnpm build
+            printf '%s\n' '{"private":true,"engines":{"node":"26.x"}}' > out/package.json
           preview_output: true
           dist_path: out
           project_name: xaccount-ui
           prod_mode: true
           enable_cache: true
-          enable_notify_slack: false
-          slack_channel: public-ringdao-apps
-          slack_webhook: ${{ secrets.SLACK_INCOMING_WEBHOOK_URL }}
 
       - name: Slack Notification
         if: ${{ success() }}
